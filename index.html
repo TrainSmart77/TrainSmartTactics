@@ -66,7 +66,7 @@ h1,h2{margin:0;font-family:var(--font-display);font-weight:600;letter-spacing:.0
 .last.ok{color:var(--text)}
 .last.ok::before{content:"✓ ";color:var(--accent);font-weight:700}
 .last.next{color:var(--accent);font-weight:600}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:none}
 .big-btn{min-height:58px;border-radius:14px;background:var(--panel);border:1px solid var(--line);font-weight:600;font-size:17px}
 .undo-full{width:100%}
 
@@ -87,18 +87,22 @@ h1,h2{margin:0;font-family:var(--font-display);font-weight:600;letter-spacing:.0
 .pend-ring{fill:none;stroke:var(--accent);stroke-width:.16}
 .pend-core{fill:var(--accent)}
 .dot{fill:#94a3b8;stroke:#0c121e;stroke-width:.07}
-.dot.tor{fill:var(--tor)} .dot.kein{fill:var(--kein)}
+.dot.tor{fill:var(--tor)} .dot.kein{fill:var(--kein)} .dot.sieben{fill:#facc15} .dot.foul{fill:#f97316}
 .heat .c-floor{fill:#1d2840}
 .heat .c-goalarea{fill:#16203a}
 .heat .zone.z1{fill:transparent}
 
-#s-tac{padding:14px 12px 12px;gap:14px}
-.t-area{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;overflow:auto}
-.t-label{font-size:13px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin:0 2px 10px}
-.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.tb{height:72px;border-radius:14px;background:var(--c);color:var(--fg);font-family:var(--font-display);font-size:34px;font-weight:700;line-height:1;display:grid;place-items:center;box-shadow:inset 0 -4px 0 rgba(0,0,0,.18);min-width:0}
+#s-tac{padding:12px 12px 12px;gap:10px}
+.t-area{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:auto;overscroll-behavior:contain}
+.t-area>*{flex:none}
+.t-label{font-size:13px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin:auto 2px 8px}
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tb{height:62px;border-radius:14px;background:var(--c);color:var(--fg);font-family:var(--font-display);font-size:34px;font-weight:700;line-height:1;display:grid;place-items:center;box-shadow:inset 0 -4px 0 rgba(0,0,0,.18);min-width:0}
 
 .tb:active{filter:brightness(.85)}
+.rbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;flex:none}
+.rb{min-height:54px;border-radius:12px;background:var(--c);color:var(--fg);font-family:var(--font-display);font-size:22px;font-weight:700;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18);opacity:.38;transition:opacity .1s}
+.rb.sel{opacity:1;box-shadow:0 0 0 3px var(--bg),0 0 0 5px #fff}
 .no-tacs{color:var(--muted);display:flex;flex-direction:column;gap:12px;align-items:flex-start;padding:4px 2px}
 
 #s-auswertung,#s-setup{overflow:auto;display:none}
@@ -202,6 +206,7 @@ h1,h2{margin:0;font-family:var(--font-display);font-weight:600;letter-spacing:.0
     <button class="big-btn" id="tCancel">Abbrechen</button>
     <button class="big-btn" id="tNone">Ohne Spielzug</button>
   </div>
+  <div class="rbar" id="resBar" aria-label="Ergebnis"><button class="rb" data-res="tor">Tor</button><button class="rb" data-res="sieben">7m</button><button class="rb" data-res="kein">FW</button><button class="rb" data-res="foul">Foul</button></div>
 </main>
 
 <main class="screen" id="s-auswertung">
@@ -220,7 +225,7 @@ h1,h2{margin:0;font-family:var(--font-display);font-weight:600;letter-spacing:.0
     <div class="card">
       <h2 id="fHead">Spielzüge</h2>
       <div class="fgrid" id="fgrid"></div>
-      <p class="hint">Punkte im Feld: grün = Tor, rot = kein Tor. Position im Feld antippen zeigt die Spielzüge von dort, Spielzug antippen zeigt nur dessen Würfe.</p>
+      <p class="hint">Punkte im Feld: grün = Tor, rot = kein Tor, gelb = 7m, orange = Foul. Position im Feld antippen zeigt die Spielzüge von dort, Spielzug antippen zeigt nur dessen Würfe.</p>
       <button class="btn" id="btnImg">Als Bild exportieren</button>
     </div>
     <div class="card">
@@ -246,16 +251,17 @@ h1,h2{margin:0;font-family:var(--font-display);font-weight:600;letter-spacing:.0
     <div class="card">
       <h2>Spielzüge</h2>
       <ul class="list" id="tacEdit"></ul>
-      <form class="add" id="tacAdd" autocomplete="off">
+      <div class="add" id="tacAdd">
         <input class="in" id="inTac" maxlength="5" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="Neuer Spielzug (max. 5 Zeichen)" aria-label="Kürzel des neuen Spielzugs">
-        <button class="btn primary" type="submit">Hinzufügen</button>
-      </form>
+        <button class="btn primary" type="button" id="tacAddBtn">Hinzufügen</button>
+      </div>
       <p class="hint">Am Griff ⠿ festhalten und ziehen, um die Reihenfolge zu ändern. So stehen die Buttons im Spiel. Farbfeld antippen ändert die Farbe. Erlaubt sind Zahlen, Buchstaben und Sonderzeichen, bis zu 5 Zeichen.</p>
       <span class="lbl">Spalten auf dem Spielzug-Screen</span>
       <div class="seg cols" id="colSeg" aria-label="Spalten"><button data-cols="1">1</button><button data-cols="2">2</button><button data-cols="3">3</button><button data-cols="4">4</button><button data-cols="5">5</button></div>
     </div>
     <div class="card">
       <h2>Spiele</h2>
+      <button class="btn danger" id="btnEnd">Spiel beenden</button>
       <button class="btn primary" id="btnNew">Neues Spiel anlegen</button>
       <ul class="list" id="games"></ul>
     </div>
@@ -273,7 +279,8 @@ const LS_KEY = 'wurfbild.iphone.v1';
 const SEVEN = '__7m';
 const ZONES = {LA:'Linksaußen', RL:'Rückraum links', RM:'Rückraum Mitte', RR:'Rückraum rechts', RA:'Rechtsaußen', KM:'Kreis', '7M':'7-Meter'};
 const FIELD_ZONES = ['LA','RL','RM','RR','RA','KM'];
-const RES_LABEL = {tor: 'Tor', kein: 'Kein Tor'};
+const RES_LABEL = {tor: 'Tor', kein: 'Kein Tor', sieben: '7m', foul: 'Foul'};
+const RES_COLOR = {tor: '#22c55e', kein: '#ef4444', sieben: '#facc15', foul: '#f97316'};
 const PALETTE = ['#ef4444','#f97316','#facc15','#22c55e','#14b8a6','#0ea5e9','#3b82f6','#8b5cf6','#ec4899','#f1f5f9','#94a3b8','#a3e635'];
 const DEFAULT_TACTICS = ['1','2','3','4','5','6','7','8'];
 const VB = {x:-10.6, y:-1.3, w:21.2, h:21.9};
@@ -406,7 +413,7 @@ const CA = buildCourt($('#courtA'), 'a');
 CE.lbl.innerHTML = FIELD_ZONES.map(z => svgText(LABEL_POS[z][0], LABEL_POS[z][1], 1, 'zl', z)).join('');
 
 function tapCourt(x, y){
-  if(teamTap) return;
+  if(teamTap || G().ended) return;
   P = {x: r2(x), y: r2(y), zone: zoneAt(x, y), res: null, team: null};
   lastOk = false;
   renderPos();
@@ -461,17 +468,17 @@ function undo(){
 
 function renderPos(){
   const g = G();
-  $('#ctx').innerHTML = '<b>' + (g.half || 1) + '. Halbzeit</b> · ' + plW(g.shots.length);
+  $('#ctx').innerHTML = '<b>' + (g.ended ? 'Beendet' : (g.half || 1) + '. Halbzeit') + '</b> · ' + plW(g.shots.length);
   $('#teams').classList.toggle('ready', !!P);
   document.querySelectorAll('#teams button').forEach(b => { b.classList.remove('hit', 'miss'); b.textContent = teamName(g, b.dataset.team); b.style.cssText = colorStyle(teamColor(g, b.dataset.team)); b.disabled = !P; });
   const l = $('#last');
   l.textContent = P ? P.zone + ' · ' + ZONES[P.zone] + ' – Team: 1× Tor, 2× kein Tor'
-    : (lastMsg || 'Position antippen, dann Team: 1× Tor, 2× kein Tor');
+    : (g.ended ? 'Spiel beendet – neues Spiel: Menü → Teams & Spielzüge' : (lastMsg || 'Position antippen, dann Team: 1× Tor, 2× kein Tor'));
   l.classList.toggle('ok', !P && lastOk);
   l.classList.toggle('next', !!P);
   const ub = $('#undoBtn');
   ub.textContent = P ? 'Abbrechen' : 'Rückgängig';
-  ub.disabled = !P && !g.shots.length;
+  ub.disabled = !P && (!g.shots.length || !!g.ended);
   CE.zones.forEach(p => p.classList.toggle('hot', !!P && P.zone === p.dataset.zone));
   CE.pend.innerHTML = P ? '<circle class="pend-ring" cx="' + P.x + '" cy="' + P.y + '" r=".7"/><circle class="pend-core" cx="' + P.x + '" cy="' + P.y + '" r=".2"/>' : '';
 }
@@ -486,6 +493,7 @@ function renderTac(){
   const base = {1: 40, 2: 34, 3: 30, 4: 26, 5: 22}[cols];
   grid.innerHTML = act.length ? act.map(t => '<button class="tb" data-tac="' + t.id + '" style="--c:' + esc(t.color) + ';--fg:' + fgFor(t.color) + ';font-size:' + codeSize(base, t.code) + 'px" aria-label="Spielzug ' + esc(t.code) + '">' + esc(t.code) + '</button>').join('')
     : '<div class="no-tacs">Noch keine Spielzüge angelegt.<button class="btn primary" data-go="setup">Spielzüge anlegen</button></div>';
+  updResBar();
 }
 
 function halfShots(g){ const t = A.team || g.team || 'A'; return g.shots.filter(s => shotTeam(s) === t && (A.half === 'all' || s.half === A.half)); }
@@ -568,6 +576,8 @@ function renderSetup(){
   if(document.activeElement !== ib) ib.value = teamName(g, 'B');
   $('#swA').style.cssText = colorStyle(teamColor(g, 'A'));
   $('#swB').style.cssText = colorStyle(teamColor(g, 'B'));
+  $('#btnEnd').textContent = g.ended ? 'Beendetes Spiel wieder öffnen' : 'Spiel beenden';
+  $('#btnEnd').classList.toggle('danger', !g.ended);
   $('#tacEdit').innerHTML = activeTactics(g).map(t =>
     '<li class="te" data-id="' + t.id + '"><span class="drag" role="button" aria-label="Spielzug ' + esc(t.code) + ' verschieben">' + ICON_GRIP + '</span>' +
     '<button class="sw" data-act="color" style="--c:' + esc(t.color) + ';--fg:' + fgFor(t.color) + ';font-size:' + codeSize(24, t.code) + 'px" aria-label="Farbe von Spielzug ' + esc(t.code) + ' ändern">' + esc(t.code) + '</button>' +
@@ -577,7 +587,7 @@ function renderSetup(){
   document.querySelectorAll('#colSeg button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.cols === (g.cols || 2))));
   $('#games').innerHTML = sortGames(liveGames()).map(x =>
     '<li class="gl' + (x.id === g.id ? ' cur' : '') + '"><button class="gl-main" data-open="' + x.id + '"><b>' + esc(gameTitle(x)) + '</b>' +
-    '<span>' + fmtDate(x.date) + ' · ' + plW(x.shots.length) + (x.id === g.id ? ' · geöffnet' : '') + '</span></button>' +
+    '<span>' + fmtDate(x.date) + ' · ' + plW(x.shots.length) + (x.ended ? ' · beendet' : '') + (x.id === g.id ? ' · geöffnet' : '') + '</span></button>' +
     '<button class="ib del" data-del="' + x.id + '" aria-label="Spiel löschen">' + ICON_X + '</button></li>').join('');
 }
 
@@ -770,6 +780,9 @@ function drawExport(g, shots, tac){
   let sx = tx; c.font = '600 32px ' + FB;
   const part = (txt, col) => { c.fillStyle = col; c.fillText(txt, sx, 204); sx += c.measureText(txt).width; };
   part(plW(shots.length), EXP.text); part('  ·  ', EXP.muted); part(plT(nT), EXP.tor); part('  ·  ', EXP.muted); part(nK + ' kein Tor', EXP.kein);
+  const nS = shots.filter(s => s.res === 'sieben').length, nF = shots.filter(s => s.res === 'foul').length;
+  if(nS){ part('  ·  ', EXP.muted); part(nS + ' 7m', RES_COLOR.sieben); }
+  if(nF){ part('  ·  ', EXP.muted); part(nF + ' Foul', RES_COLOR.foul); }
 
   const scale = (W - 2 * pad) / VB.w, ox = pad, oy = 250;
   const px = x => ox + (x - VB.x) * scale, py = y => oy + (y - VB.y) * scale;
@@ -798,7 +811,7 @@ function drawExport(g, shots, tac){
   shots.forEach(s => {
     if(s.zone === '7M' || s.x == null) return;
     c.beginPath(); c.arc(s.x, s.y, .42, 0, Math.PI * 2);
-    c.fillStyle = s.res === 'tor' ? EXP.tor : s.res === 'kein' ? EXP.kein : EXP.unk; c.fill();
+    c.fillStyle = RES_COLOR[s.res] || EXP.unk; c.fill();
     c.lineWidth = .08; c.strokeStyle = EXP.bg; c.stroke();
   });
   c.restore();
@@ -811,7 +824,7 @@ function drawExport(g, shots, tac){
   const ly = oy + VB.h * scale + 62;
   c.textAlign = 'left'; c.font = '600 30px ' + FB;
   let lx = pad;
-  [['Tor', EXP.tor], ['Kein Tor', EXP.kein]].forEach(([t, col]) => {
+  [['Tor', RES_COLOR.tor], ['Kein Tor', RES_COLOR.kein], ['7m', RES_COLOR.sieben], ['Foul', RES_COLOR.foul]].forEach(([t, col]) => {
     c.fillStyle = col; c.beginPath(); c.arc(lx + 14, ly - 10, 14, 0, Math.PI * 2); c.fill();
     c.fillStyle = EXP.text; c.fillText(t, lx + 40, ly); lx += 40 + c.measureText(t).width + 44;
   });
@@ -873,6 +886,8 @@ $('#teams').addEventListener('click', e => { const b = e.target.closest('[data-t
 $('#undoBtn').addEventListener('click', undo);
 $('#tgrid').addEventListener('click', e => { const b = e.target.closest('[data-tac]'); if(b) save(b.dataset.tac); });
 $('#tNone').addEventListener('click', () => save(null));
+function updResBar(){ document.querySelectorAll('#resBar button').forEach(b => { b.style.cssText = colorStyle(RES_COLOR[b.dataset.res]); b.classList.toggle('sel', !!P && P.res === b.dataset.res); }); }
+$('#resBar').addEventListener('click', e => { const b = e.target.closest('[data-res]'); if(!b || !P) return; P.res = b.dataset.res; updResBar(); });
 $('#tCancel').addEventListener('click', () => { P = null; lastMsg = ''; go('pos'); });
 
 $('#aTeam').addEventListener('click', e => { const b = e.target.closest('[data-at]'); if(!b) return; A.team = b.dataset.at; A.tac = null; A.zone = null; renderAnalysis(); });
@@ -905,6 +920,25 @@ $('#btnNew').addEventListener('click', () => {
   S.games[g.id] = g; S.currentId = g.id; P = null; A = {half: 'all', tac: null, zone: null, team: null}; lastMsg = '';
   touchGame(g); renderSetup();
   $('#s-setup').scrollTop = 0; const ib = $('#inB'); try{ ib.focus(); ib.select(); }catch(e){}
+});
+function backupOf(list){ return JSON.stringify({app: 'wurfbild-iphone', version: 1, exported: new Date().toISOString(), games: list}, null, 1); }
+function openEndSave(g){
+  openModal('<h2>Spiel beendet</h2><p>' + esc(gameTitle(g)) + ' · ' + plW(g.shots.length) + '</p><p class="hint">Soll die Datei gesichert werden? Im Teilen-Menü „In Dateien sichern“ wählen, um sie z. B. in iCloud Drive abzulegen.</p>' +
+    '<button class="m-btn tall" data-act="e-file">Spiel als Datei sichern<small>Sicherung (.json) – später wieder ladbar</small></button>' +
+    '<button class="m-btn tall" data-act="e-csv">Als Excel-Tabelle (CSV)<small>Eine Zeile pro Wurf</small></button>' +
+    '<button class="m-btn tall" data-act="e-text">Sicherung als Text kopieren<small>Falls Dateien nicht gehen</small></button>' +
+    '<div class="m-foot"><button class="btn" data-act="close">Nicht sichern</button></div>',
+    b => {
+      const a = b.dataset.act;
+      if(a === 'e-file') offerFile(fileBase(g) + '.json', backupOf([g]), 'Sicherung', 'application/json');
+      else if(a === 'e-csv') offerFile(fileBase(g) + '.csv', csvText(g), 'Tabelle (CSV)', 'text/csv');
+      else if(a === 'e-text') textModal('Sicherung (Text)', backupOf([g]), 'Alles kopieren und sicher ablegen. Später über „Sicherung aus Text einfügen“ laden.');
+    });
+}
+$('#btnEnd').addEventListener('click', () => {
+  const g = G();
+  if(g.ended){ g.ended = 0; touchGame(g); renderSetup(); return; }
+  confirmBox('Spiel beenden?', gameTitle(g) + ' mit ' + plW(g.shots.length) + ' wird beendet. Danach können keine Würfe mehr erfasst werden (das Spiel lässt sich wieder öffnen).', 'Beenden', () => { g.ended = Date.now(); touchGame(g); renderSetup(); openEndSave(g); });
 });
 $('#games').addEventListener('click', e => {
   const o = e.target.closest('[data-open]');
@@ -977,8 +1011,7 @@ function endDrag(){
 tacList.addEventListener('pointerup', endDrag);
 tacList.addEventListener('pointercancel', endDrag);
 
-$('#tacAdd').addEventListener('submit', e => {
-  e.preventDefault();
+function addTactic(){
   const inp = $('#inTac'), code = inp.value.trim(); if(!code){ inp.focus(); return; }
   const g = G(); const act = activeTactics(g);
   if(!act.some(t => String(t.code).toLowerCase() === code.toLowerCase())){
@@ -987,7 +1020,9 @@ $('#tacAdd').addEventListener('submit', e => {
     touchGame(g);
   }
   inp.value = ''; renderSetup(); inp.focus();
-});
+}
+$('#tacAddBtn').addEventListener('click', addTactic);
+$('#inTac').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); addTactic(); } });
 
 const SYNC_TXT = {local: 'auf diesem iPhone. Speichere nach jedem Spiel zusätzlich eine „Sicherung aller Spiele“.'};
 const syncState = 'local';
